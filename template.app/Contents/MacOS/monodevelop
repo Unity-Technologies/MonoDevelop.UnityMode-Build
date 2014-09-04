@@ -13,15 +13,20 @@ if test "x${TMPDIR}" = "x"; then
 	TMPDIR=/tmp
 fi
 
+if [ -d "/Library/Frameworks/Mono.framework" ]; then
+	echo YOU STILL HAVE A SYSTEM MONO
+	exit
+fi
+
 export DYLD_FALLBACK_LIBRARY_PATH=$DIR/lib:$MONO_FRAMEWORK_PATH/lib:/lib:/usr/lib
 export MONO_GAC_PREFIX=$MONO_FRAMEWORK_PATH:$DIR
 export MONO_PATH=$MONO_FRAMEWORK_PATH/lib/mono:$MONO_FRAMEWORK_PATH/lib/gtk-sharp-2.0
 export MONO_CONFIG=$MONO_FRAMEWORK_PATH/etc/mono/config
 export MONO_CFG_DIR=$MONO_FRAMEWORK_PATH/etc
 export XDG_DATA_HOME=$MONO_FRAMEWORK_PATH/share
-#export GDK_PIXBUF_MODULE_FILE=$MONO_FRAMEWORK_PATH/etc/gtk-2.0/gdk-pixbuf.loaders
+export GDK_PIXBUF_MODULE_FILE=$MONO_FRAMEWORK_PATH/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
 export GDK_PIXBUF_MODULEDIR=$MONO_FRAMEWORK_PATH/lib/gtk-2.0/2.10.0/loaders
-#export PANGO_RC_FILE=$TMPDIR/etc/pango/pangorc
+export PANGO_RC_FILE=$MONO_FRAMEWORK_PATH/etc/pango/pangorc
 export GTK_DATA_PREFIX=$MONO_FRAMEWORK_PATH
 export GTK_EXE_PREFIX=$MONO_FRAMEWORK_PATH
 export GTK_PATH=$MONO_FRAMEWORK_PATH/lib/gtk-2.0:$MONO_FRAMEWORK_PATH/lib/gtk-2.0/2.10.0
@@ -30,11 +35,20 @@ export GTK2_RC_FILES=$MONO_FRAMEWORK_PATH/etc/gtk-2.0/gtkrc
 export PATH="$DIR/bin:$MONO_FRAMEWORK_PATH/bin:$PATH"
 export PKG_CONFIG_PATH="$DIR/lib/pkgconfig:$DIR/share/pkgconfig:$PKG_CONFIG_PATH"
 
-echo "Rewriting config files..."
-find "${FINAL_INSTALL_DIR}" -name '*.config.in' -execdir "${DIR}/replacePath.sh" "{}" \;
-find "${FINAL_INSTALL_DIR}" -name '*.pc.in' -execdir "${DIR}/replacePath.sh" "{}" \;
-find "${FINAL_INSTALL_DIR}" -name '*.loaders.in' -execdir "${DIR}/replacePath.sh" "{}" \;
-"${DIR}/replacePath.sh" "${MONO_FRAMEWORK_PATH}/etc/mono/config.in"
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:check
+export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:check
+
+echo DYLD_FRAMEWORK_PATH is $DYLD_FRAMEWORK_PATH
+echo LD_LIBRARY_PATH is $LD_LIBRARY_PATH
+echo DYLD_LIBRARY_PATH is $DYLD_LIBRARY_PATH
+echo DYLD_FALLBACK_LIBRARY_PATH is $DYLD_FALLBACK_LIBRARY_PATH
+
+sh $MONO_FRAMEWORK_PATH/relocate_mono.sh
+#echo "Rewriting config files..."
+#find "${FINAL_INSTALL_DIR}" -name '*.config.in' -execdir "${DIR}/replacePath.sh" "{}" \;
+#find "${FINAL_INSTALL_DIR}" -name '*.pc.in' -execdir "${DIR}/replacePath.sh" "{}" \;
+#find "${FINAL_INSTALL_DIR}" -name '*.loaders.in' -execdir "${DIR}/replacePath.sh" "{}" \;
+#"${DIR}/replacePath.sh" "${MONO_FRAMEWORK_PATH}/etc/mono/config.in"
 
 # Move pango config and module files to $TMPDIR, since pango absolutely can't handle being in a subdir of a weird path
 #cp "${MONO_FRAMEWORK_PATH}/etc/pango/pango.modules.in" "${MONO_FRAMEWORK_PATH}/etc/pango/pango.modules"
@@ -50,7 +64,7 @@ find "${FINAL_INSTALL_DIR}" -name '*.loaders.in' -execdir "${DIR}/replacePath.sh
 #mkdir -p "${TMPDIR}/lib"
 #cp -R "${MONO_FRAMEWORK_PATH}/lib/pango" "${TMPDIR}/lib"
 
-find "${MONO_FRAMEWORK_PATH}/bin" -name '*.in' -execdir "${DIR}/replacePathQuoted.sh" "{}" \;
+#find "${MONO_FRAMEWORK_PATH}/bin" -name '*.in' -execdir "${DIR}/replacePathQuoted.sh" "{}" \;
 
 #we need lots of file handles
 ulimit -n 1024
@@ -71,11 +85,6 @@ export MSBuildExtensionsPath="$MONO_FRAMEWORK_EXT/xbuild:$MSBuildExtensionPath"
 #if [ -w "$DIR" ]; then
 #	export MONO_ADDINS_REGISTRY="$DIR"
 #fi
-
-## Moonlight SDK
-if [ -d "$DIR/lib/moonlight" ]; then
-        export MOONLIGHT_SDK_PATH="$DIR/lib/moonlight"
-fi
 
 _MD_LOG_FILE="${MD_LOG_FILE:-$HOME/Library/Logs/MonoDevelop-Unity-$MONODEVELOP_MAJOR_VERSION/MonoDevelop.log}"
 
