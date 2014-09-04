@@ -139,11 +139,13 @@ sub build_unitymode_addin()
 }
 
 sub package_monodevelop {
-	my $targetapp = "$buildRepoRoot/MonoDevelop-Unity.app";
+	my $buildresult = "$buildRepoRoot/buildresult";
+	rmtree($buildresult) if (-d $buildresult);
+	mkpath($buildresult);
+
+	my $targetapp = "$buildresult/MonoDevelop-Unity.app";
 	my $monodevelopbuild = "$root/monodevelop/main/build";
 	my $monodeveloptarget = "$targetapp/Contents/MacOS/lib/monodevelop";
-
-	rmtree($targetapp) if (-d $targetapp);
 
 	system("cp -r $buildRepoRoot/template.app $targetapp");
 	

@@ -14,7 +14,8 @@ my $documentation = <<'END_MESSAGE';
 #
 #Some of the hardcoded paths inside the mono framework live in text files. (things like mono.config, etc/gtk-2.0/gtkrc). Other hardcoded
 #paths live inside some .dylibs  (like libglib-2.0.0.dylib references /Library/Frameworks/Mono.framework/Versions/3.6.0/lib/libintl.8.0.dylib) with a hardcoded
-#path. Currently we only patch up the text file ones, we should probably also start patching the dylibs.
+#path. At update_mono_framework.pl time, we remove these hardcoded paths from the dylibs so that dependent libraries wont be loaded from a potentially 
+#installed system mono. at runtime we patch the textfiles to point to the correct place where the bundled mono framework is living at this time.
 #
 #Because the monodevelop bundle is part of the unity bundle, and we want users to be able to move the unity bundle anywhere on their harddrive at any point
 #in time, we do this patching every time monodevelop starts. In the monodevelop build process, there is a script update_mono_framework.pl.  This script
@@ -146,4 +147,26 @@ open(my $fh, '>', $filename) or die "Could not open file '$filename' $!";
 print $fh $relocatescript;
 close $fh;
 
-print $relocatescript;
+
+#now we will replace all embedded hardcoded paths inside the dylibs with versions without any path, so that OSX's dlopen() will use the normal DYLD_FALLBACK_LIBRARY_PATH that
+#we setup, and that all dependent libraries cannot be accidentally be loaded from a system installed mono.
+my $libpath = "$current/lib";
+my @dylibs = <$libpath/*.dylib>;
+foreach $dylib (@dylibs)
+{
+	print "Analyzing dependencies of dylib: $dylib\n";
+	my @array = `otool -L $dylib`;
+	foreach $line (@array)
+	{
+		chomp $line;
+		my $prefix = "\t\/Library\/Frameworks\/Mono\.framework\/Versions\/3\.6\.0\/lib\/";
+		while($line =~ /$prefix(.*)\.dylib/g) {
+			my $regexmatch = $1;
+			my $command = "install_name_tool -change $prefix$regexmatch.dylib $regexmatch.dylib $dylib";
+			print "About to patch reference $regexmatch with command: $command\n";
+			system($command) && die("failed invoking install_name_tool");
+		}
+	}
+}
+
+#print $relocatescript;
