@@ -6,20 +6,19 @@ use File::Spec;
 use File::Copy;
 use File::Path;
 use File::Find qw( find );
-my $root = "";
-my $nant = "mono --runtime=v4.0.30319 /usr/lib/NAnt/NAnt.exe";
-my $mdSource = "";
-my $mdRoot = "";
-my $scriptDir = "";
+
+my $buildRepoRoot = File::Spec->rel2abs( dirname($0) );
+my $root = File::Spec->rel2abs( File::Spec->updir() );
+my $mdSource = "$root/monodevelop/main/build";
 
 main();
 
 sub main {
-	get_root();
 	prepare_sources();
 	#build_monodevelop();
 	build_unitymode_addin();
 	remove_unwanted_addins();
+	package_monodevelop();
 	#build_debugger();
 	# build_monodevelop_hg();
 	#finalize_monodevelop();
@@ -28,15 +27,6 @@ sub main {
 	#build_unityscript();
 	#build_boo_md_addins(); 
 	#package_monodevelop();
-}
-
-sub get_root {
-	$scriptDir = File::Spec->rel2abs( dirname($0) );
-	chdir $scriptDir;
-	$root = File::Spec->rel2abs( File::Spec->updir() );
-	chdir $root;
-
-	$mdSource = "$root/monodevelop/main/build";
 }
 
 sub prepare_sources {
@@ -68,6 +58,7 @@ sub IsWhiteListed {
 	return 1 if $path =~ /MonoDevelop.DesignerSupport/;
 	return 1 if $path =~ /MonoDevelop.Refactoring/;
 	return 1 if $path =~ /MonoDevelop.RegexToolkit/;
+	return 1 if $path =~ /MonoDevelop.UnityMode/;
 	return 1 if $path =~ /WindowsPlatform/;
 	return 1 if $path =~ /\/Xml/;
 	
@@ -112,7 +103,7 @@ sub build_monodevelop {
 	system("./configure --profile=unity");
 	system("make") && die("Failed building MonoDevelop");
 	mkpath("main/build/bin/branding");
-	copy("$scriptDir/Branding.xml", "main/build/bin/branding/Branding.xml") or die("failed copying branding");
+	copy("$buildRepoRoot/Branding.xml", "main/build/bin/branding/Branding.xml") or die("failed copying branding");
 }
 
 sub process_addin_path {
@@ -134,7 +125,7 @@ sub process_addin_path {
 
 sub remove_unwanted_addins()
 {
-	chdir($root);
+	chdir("$root/monodevelop");
 	find({
 	   wanted   => \&process_addin_path,
 	   no_chdir => 1,
@@ -148,11 +139,24 @@ sub build_unitymode_addin()
 }
 
 sub package_monodevelop {
-	system("cp -R $mdRoot/* $root/monodevelop/main/build");
-	chdir "$root/monodevelop";
-	print "Collecting built files so they can be packaged on a mac\n";
-	unlink "MonoDevelop.tar.gz";
-	system("tar cfz MonoDevelop.tar.gz main extras");
-	move "MonoDevelop.tar.gz", "$root";
-	chdir "$root";
+	my $targetapp = "$buildRepoRoot/MonoDevelop-Unity.app";
+	my $monodevelopbuild = "$root/monodevelop/main/build";
+	my $monodeveloptarget = "$targetapp/Contents/MacOS/lib/monodevelop";
+
+	rmtree($targetapp) if (-d $targetapp);
+
+	system("cp -r $buildRepoRoot/template.app $targetapp");
+	
+	mkpath($monodeveloptarget);
+	system("cp -r $monodevelopbuild/Addins $monodeveloptarget/");
+	system("cp -r $monodevelopbuild/bin $monodeveloptarget/");
+	system("cp -r $monodevelopbuild/data $monodeveloptarget/");
+
+	# system("cp -R $mdRoot/* $root/monodevelop/main/build");
+	# chdir "$root/monodevelop";
+	# print "Collecting built files so they can be packaged on a mac\n";
+	# unlink "MonoDevelop.tar.gz";
+	# system("tar cfz MonoDevelop.tar.gz main extras");
+	# move "MonoDevelop.tar.gz", "$root";
+	# chdir "$root";
 }

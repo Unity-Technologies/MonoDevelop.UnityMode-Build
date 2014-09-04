@@ -49,9 +49,9 @@ system("mkdir $mf/Versions");
 my $current = "$mf/Versions/Current";
 system("mkdir $current");
 
-die "Cannot find monoframework to copy" if (not -d "/Library/Frameworks/Mono.framework2");
+die "Cannot find monoframework to copy" if (not -d "/Library/Frameworks/Mono.framework");
 
-system("cp -r /Library/Frameworks/Mono.framework2/Versions/3.6.0/* $current");
+system("cp -r /Library/Frameworks/Mono.framework/Versions/3.6.0/* $current");
 #rmtree("$current/lib/mono/gac");
 #rmtree("$current/lib/mono/xbuild-frameworks");
 rmtree("$current/lib/mono/monodroid");
@@ -60,15 +60,15 @@ rmtree("$current/lib/ironruby");
 rmtree("$current/lib/ironpython");
 rmtree("$current/lib/mono/boo");
 rmtree("$current/lib/mono/Reference Assemblies");
-rmtree("$current/lib/monodoc");
+#rmtree("$current/lib/monodoc");
 rmtree("$current/include");
-rmtree("$current/share/xml");
+#rmtree("$current/share/xml");
 rmtree("$current/share/autoconf");
 rmtree("$current/share/automake-1.13");
 rmtree("$current/share/libtool");
 rmtree("$current/share/man");
 #rmtree("$current/etc/xml");
-rmtree("$current/lib/mono/xbuild");
+#rmtree("$current/lib/mono/xbuild");
 rmtree("$current/lib/mono/Microsoft SDKs");
 rmtree("$current/lib/mono/Microsoft F#");
 
@@ -82,8 +82,6 @@ system("rm -r $current/lib/mono/4.0/FSharp.*");
 system("rm -r $current/lib/mono/portable-*");
 #system("rm -r $current/lib/libLTO.dylib");
 #system("find $current/bin ! -name mono -type f -delete");
-#system("rm $current/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache");
-#system("rm $current/lib/gtk-2.0/2.10.0/immodules.cache");
 
 mkpath("$current/etc/pango");
 my $filename = "$current/etc/pango/pangorc";
@@ -126,15 +124,22 @@ END_MESSAGE
 foreach $line (@array)
 {
 	chomp($line);
-	#next if ($line =~ /pangorc$/);
 	system("cp $line $line.in");
 
 	next if ($line =~ /pango.modules$/);
 	$relocatescript .= "sed \"s,/Library/Frameworks/Mono.framework/Versions/3.6.0,\$MONO_FRAMEWORK_PATH,g\" \"$line.in\" > \"$line\"\n";
 }
 
-$relocatescript .= "sed \"s,/Library/Frameworks/Mono.framework/Versions/3.6.0,\${TMPDIR}/unity-monodevelop-monoframework,g\" \"etc/pango/pango.modules.in\" > \"etc/pango/pango.modules\"\n";
-$relocatescript .= "ln -sf \"\$MONO_FRAMEWORK_PATH\" \${TMPDIR}/unity-monodevelop-monoframework\n";
+$relocatescript .= <<END_MESSAGE;
+sed "s,/Library/Frameworks/Mono.framework/Versions/3.6.0,\${TMPDIR}/unity-monodevelop-monoframework,g" "etc/pango/pango.modules.in" > "etc/pango/pango.modules"
+
+MONOFRAMEWORK_SYMLINK=\${TMPDIR}/unity-monodevelop-monoframework
+
+if [ -d "\$MONOFRAMEWORK_SYMLINK" ]; then
+  rm "\$MONOFRAMEWORK_SYMLINK"
+fi
+ln -sf "\$MONO_FRAMEWORK_PATH" "\$MONOFRAMEWORK_SYMLINK"
+END_MESSAGE
 
 my $filename = "$current/relocate_mono.sh";
 open(my $fh, '>', $filename) or die "Could not open file '$filename' $!";
