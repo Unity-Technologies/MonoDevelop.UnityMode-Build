@@ -1,102 +1,20 @@
 #!/bin/sh
 
-# Author: Marc Christensen (mchristensen@novell.com)
-#         Michael Hutchinson (mhutchinson@novell.com)
+MACOS_DIR=$(cd "$(dirname "$0")"; pwd)
+source "$MACOS_DIR/../Frameworks/Mono.framework/Versions/Current/relocate_mono.sh"
 
-DIR=$(cd "$(dirname "$0")"; pwd)
-FINAL_INSTALL_DIR="$DIR/../Frameworks/Mono.framework"
-MONO_FRAMEWORK_PATH="$FINAL_INSTALL_DIR/Versions/Current"
-MONODEVELOP_MAJOR_VERSION=3.1
-
-if test "x${TMPDIR}" = "x"; then
-	# Make sure TMPDIR gets set - should never be reached on OSX
-	TMPDIR=/tmp
-fi
-
-if [ -d "/Library/Frameworks/Mono.framework" ]; then
-	echo YOU STILL HAVE A SYSTEM MONO
-	exit
-fi
-
-export DYLD_FALLBACK_LIBRARY_PATH=$DIR/lib:$MONO_FRAMEWORK_PATH/lib:/lib:/usr/lib
-export MONO_GAC_PREFIX=$MONO_FRAMEWORK_PATH:$DIR
-export MONO_PATH=$MONO_FRAMEWORK_PATH/lib/mono:$MONO_FRAMEWORK_PATH/lib/gtk-sharp-2.0
-export MONO_CONFIG=$MONO_FRAMEWORK_PATH/etc/mono/config
-export MONO_CFG_DIR=$MONO_FRAMEWORK_PATH/etc
-export XDG_DATA_HOME=$MONO_FRAMEWORK_PATH/share
-export GDK_PIXBUF_MODULE_FILE=$MONO_FRAMEWORK_PATH/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
-export GDK_PIXBUF_MODULEDIR=$MONO_FRAMEWORK_PATH/lib/gtk-2.0/2.10.0/loaders
-export PANGO_RC_FILE=$MONO_FRAMEWORK_PATH/etc/pango/pangorc
-export GTK_DATA_PREFIX=$MONO_FRAMEWORK_PATH
-export GTK_EXE_PREFIX=$MONO_FRAMEWORK_PATH
-export GTK_PATH=$MONO_FRAMEWORK_PATH/lib/gtk-2.0:$MONO_FRAMEWORK_PATH/lib/gtk-2.0/2.10.0
-export GTK2_RC_FILES=$MONO_FRAMEWORK_PATH/etc/gtk-2.0/gtkrc
-
-export PATH="$DIR/bin:$MONO_FRAMEWORK_PATH/bin:$PATH"
-export PKG_CONFIG_PATH="$DIR/lib/pkgconfig:$DIR/share/pkgconfig:$PKG_CONFIG_PATH"
-
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:check
-export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:check
-
-echo DYLD_FRAMEWORK_PATH is $DYLD_FRAMEWORK_PATH
-echo LD_LIBRARY_PATH is $LD_LIBRARY_PATH
-echo DYLD_LIBRARY_PATH is $DYLD_LIBRARY_PATH
-echo DYLD_FALLBACK_LIBRARY_PATH is $DYLD_FALLBACK_LIBRARY_PATH
-
-sh $MONO_FRAMEWORK_PATH/relocate_mono.sh
-#echo "Rewriting config files..."
-#find "${FINAL_INSTALL_DIR}" -name '*.config.in' -execdir "${DIR}/replacePath.sh" "{}" \;
-#find "${FINAL_INSTALL_DIR}" -name '*.pc.in' -execdir "${DIR}/replacePath.sh" "{}" \;
-#find "${FINAL_INSTALL_DIR}" -name '*.loaders.in' -execdir "${DIR}/replacePath.sh" "{}" \;
-#"${DIR}/replacePath.sh" "${MONO_FRAMEWORK_PATH}/etc/mono/config.in"
-
-# Move pango config and module files to $TMPDIR, since pango absolutely can't handle being in a subdir of a weird path
-#cp "${MONO_FRAMEWORK_PATH}/etc/pango/pango.modules.in" "${MONO_FRAMEWORK_PATH}/etc/pango/pango.modules"
-#sed -i'.orig' "s,/Library/Frameworks/Mono.framework/Versions/[^/]*/,${TMPDIR}/,g" "${MONO_FRAMEWORK_PATH}/etc/pango/pango.modules"
-#mkdir -p "${TMPDIR}/etc/pango"
-#mv "${MONO_FRAMEWORK_PATH}/etc/pango/pango.modules" "${TMPDIR}/etc/pango/pango.modules"
-
-#cp "${MONO_FRAMEWORK_PATH}/etc/pango/pangorc.in" "${MONO_FRAMEWORK_PATH}/etc/pango/pangorc"
-#sed -i'.orig' "s,/Library/Frameworks/Mono.framework/Versions/Current,${TMPDIR},g" "${MONO_FRAMEWORK_PATH}/etc/pango/pangorc"
-#mv "${MONO_FRAMEWORK_PATH}/etc/pango/pangorc" "${TMPDIR}/etc/pango/pangorc"
-
-#rm -rf "${TMPDIR}/lib/pango"
-#mkdir -p "${TMPDIR}/lib"
-#cp -R "${MONO_FRAMEWORK_PATH}/lib/pango" "${TMPDIR}/lib"
-
-#find "${MONO_FRAMEWORK_PATH}/bin" -name '*.in' -execdir "${DIR}/replacePathQuoted.sh" "{}" \;
+# if [ -d "/Library/Frameworks/Mono.framework" ]; then
+# 	echo YOU STILL HAVE A SYSTEM MONO
+# 	exit
+# fi
 
 #we need lots of file handles
 ulimit -n 1024
 
-# $0 should contain the full path from the root i.e. /Applications/<folder>.app/Contents/MacOS/<script>
-EXE_PATH="$DIR/lib/monodevelop/bin/MonoDevelop.exe"
+EXE_PATH="$MACOS_DIR/lib/monodevelop/bin/MonoDevelop.exe"
 
-# The Mono "External" folder allows users (such as MonoDroid) to install
-# things without worrying that they'll be removed next time mono is upgraded
-# Mono doesn't support it get so we hack it via env vars for now.
-MONO_FRAMEWORK_EXT=/Library/Frameworks/Mono.framework/External
-export PKG_CONFIG_PATH="$MONO_FRAMEWORK_EXT/pkgconfig:$PKG_CONFIG_PATH"
-export MSBuildExtensionsPath="$MONO_FRAMEWORK_EXT/xbuild:$MSBuildExtensionPath"
-# N.B. MONO_FRAMEWORK_EXT/monodoc is handled inside MD itself
-# N.B.  no point in hacking MONO_FRAMEWORK_EXT/gac because it's for runtime
-
-## use an app-specific registry if possible
-#if [ -w "$DIR" ]; then
-#	export MONO_ADDINS_REGISTRY="$DIR"
-#fi
-
-_MD_LOG_FILE="${MD_LOG_FILE:-$HOME/Library/Logs/MonoDevelop-Unity-$MONODEVELOP_MAJOR_VERSION/MonoDevelop.log}"
-
-# NOTE: remove this for stable releases
-if [ -z "$MD_NO_DEBUG" ]; then
-	_MONO_OPTIONS=${MONO_OPTIONS:---debug}
-else
-	_MONO_OPTIONS=$MONO_OPTIONS
-fi
-
-echo "Launching ${APPNAME}..."
 if [ -z "$MD_DONT_REDIRECT_OUTPUT" ]; then
+	_MD_LOG_FILE="${MD_LOG_FILE:-$HOME/Library/Logs/Unity/MonoDevelop.log}"
 	mkdir -p "`dirname \"$_MD_LOG_FILE\"`"
 	exec "${MONO_FRAMEWORK_PATH}/bin/mono" $_MONO_OPTIONS "$EXE_PATH" $* 2>&1 1> "$_MD_LOG_FILE"
 else
