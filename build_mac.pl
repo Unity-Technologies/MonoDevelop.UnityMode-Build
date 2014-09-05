@@ -15,18 +15,10 @@ main();
 
 sub main {
 	prepare_sources();
-	#build_monodevelop();
+	build_monodevelop();
 	build_unitymode_addin();
 	remove_unwanted_addins();
 	package_monodevelop();
-	#build_debugger();
-	# build_monodevelop_hg();
-	#finalize_monodevelop();
-	#build_boo();
-	#build_boo_extensions();
-	#build_unityscript();
-	#build_boo_md_addins(); 
-	#package_monodevelop();
 }
 
 sub prepare_sources {

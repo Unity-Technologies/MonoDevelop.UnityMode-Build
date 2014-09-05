@@ -45,10 +45,8 @@ my $mf = "$scriptDir/template.app/Contents/Frameworks/Mono.framework";
 
 rmtree($mf);
 
-system("mkdir $mf");
-system("mkdir $mf/Versions");
 my $current = "$mf/Versions/Current";
-system("mkdir $current");
+system("mkdir -p $current");
 
 die "Cannot find monoframework to copy" if (not -d "/Library/Frameworks/Mono.framework");
 
