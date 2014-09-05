@@ -135,16 +135,16 @@ sub package_monodevelop {
 	rmtree($buildresult) if (-d $buildresult);
 	mkpath($buildresult);
 
-	my $targetapp = "$buildresult/MonoDevelop-Unity.app";
+	my $targetapp = "$buildresult/Unity Script Editor.app";
 	my $monodevelopbuild = "$root/monodevelop/main/build";
 	my $monodeveloptarget = "$targetapp/Contents/MacOS/lib/monodevelop";
 
-	system("cp -r $buildRepoRoot/template.app $targetapp");
+	system("cp -r $buildRepoRoot/template.app \"$targetapp\"");
 	
 	mkpath($monodeveloptarget);
-	system("cp -r $monodevelopbuild/Addins $monodeveloptarget/");
-	system("cp -r $monodevelopbuild/bin $monodeveloptarget/");
-	system("cp -r $monodevelopbuild/data $monodeveloptarget/");
+	system("cp -r $monodevelopbuild/Addins \"$monodeveloptarget/\"");
+	system("cp -r $monodevelopbuild/bin \"$monodeveloptarget/\"");
+	system("cp -r $monodevelopbuild/data \"$monodeveloptarget/\"");
 
 	# system("cp -R $mdRoot/* $root/monodevelop/main/build");
 	# chdir "$root/monodevelop";

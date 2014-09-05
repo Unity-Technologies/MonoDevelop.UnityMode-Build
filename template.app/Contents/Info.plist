@@ -13,19 +13,19 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>10.6</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.unity.monodevelop</string>
+	<string>com.unity.scripteditor</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>MonoDevelop-Unity</string>
+	<string>Unity Script Editor</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>5.5</string>
+	<string>5.1.0</string>
 	<key>CFBundleSignature</key>
-	<string>xmmd</string>
+	<string>uscr</string>
 	<key>CFBundleVersion</key>
-	<string>5.5</string>
+	<string>5.1.0</string>
 	<key>NSAppleScriptEnabled</key>
 	<string>NO</string>
 	<key>QuartzGLEnable</key>
@@ -33,6 +33,6 @@
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>ReleaseId</key>
-	<string>505000000</string>
+	<string>501000000</string>
 </dict>
 </plist>
